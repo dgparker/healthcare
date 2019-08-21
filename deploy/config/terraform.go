@@ -15,6 +15,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 )
 
@@ -35,6 +37,21 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	}
 	for _, r := range p.BigqueryDatasets {
 		rs = append(rs, r)
+	}
+
+	if len(p.IAMMembers) > 0 {
+		forEach := make(map[string]*tfconfig.ProjectIAMMember)
+		for _, m := range p.IAMMembers {
+			key := fmt.Sprintf("%s %s", m.Role, m.Member)
+			forEach[key] = m
+		}
+
+		rs = append(rs, &tfconfig.ProjectIAMMember{
+			ForEach: forEach,
+			Project: p.ID,
+			Role:    "${each.value.role}",
+			Member:  "${each.value.member}",
+		})
 	}
 	return rs
 }
